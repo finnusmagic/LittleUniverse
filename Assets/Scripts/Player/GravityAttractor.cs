@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class GravityAttractor : MonoBehaviour {
 
-    public float gravity = -9.8f;
+    [SerializeField] float gravity = -9.8f;
 
+    GravityBody gravityBody;
+    Vector3 gravityUp = Vector3.zero;
+    Vector3 localUp = Vector3.zero;
 
     public void Attract(Rigidbody body)
     {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
-[RequireComponent(typeof(ConfigurableJoint))]
 [RequireComponent(typeof(PlayerMotor))]
 public class PlayerController : MonoBehaviour
 {
@@ -27,26 +26,13 @@ public class PlayerController : MonoBehaviour
         return thrusterFuelAmount;
     }
 
-    [SerializeField]
-    private LayerMask environmentMask;
-
-    [Header("Spring settings:")]
-    [SerializeField]
-    private float jointSpring = 20f;
-    [SerializeField]
-    private float jointMaxForce = 40f;
-
     private PlayerMotor motor;
-    private ConfigurableJoint joint;
     private Animator animator;
 
     void Start()
     {
         motor = GetComponent<PlayerMotor>();
-        joint = GetComponent<ConfigurableJoint>();
         animator = GetComponent<Animator>();
-
-        SetJointSettings(jointSpring);
     }
 
     void Update()
@@ -66,16 +52,6 @@ public class PlayerController : MonoBehaviour
         if (Cursor.lockState != CursorLockMode.Locked)
         {
             Cursor.lockState = CursorLockMode.Locked;
-        }
-
-        RaycastHit _hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out _hit, 100f, environmentMask))
-        {
-            joint.targetPosition = new Vector3(0f, -_hit.point.y, 0f);
-        }
-        else
-        {
-            joint.targetPosition = new Vector3(0f, 0f, 0f);
         }
 
         float _xMov = Input.GetAxis("Horizontal");
@@ -109,13 +85,22 @@ public class PlayerController : MonoBehaviour
             if (thrusterFuelAmount >= 0.01f)
             {
                 _thrusterForce = transform.up * thrusterForce;
-                SetJointSettings(0f);
             }
         }
+
+        else if(Input.GetKey(KeyCode.LeftShift) && thrusterFuelAmount > 0f)
+        {
+            thrusterFuelAmount -= thrusterFuelBurnSpeed * Time.deltaTime;
+
+            if (thrusterFuelAmount >= 0.01f)
+            {
+                _thrusterForce = -transform.up * thrusterForce;
+            }
+        }
+
         else
         {
             thrusterFuelAmount += thrusterFuelRegenSpeed * Time.deltaTime;
-            SetJointSettings(jointSpring);
         }
 
         thrusterFuelAmount = Mathf.Clamp(thrusterFuelAmount, 0f, 1f);
@@ -123,14 +108,4 @@ public class PlayerController : MonoBehaviour
         motor.ApplyThruster(_thrusterForce);
 
     }
-
-    private void SetJointSettings(float _jointSpring)
-    {
-        joint.yDrive = new JointDrive
-        {
-            positionSpring = _jointSpring,
-            maximumForce = jointMaxForce
-        };
-    }
-
 }
